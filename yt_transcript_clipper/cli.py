@@ -101,8 +101,8 @@ def clip(url: str = typer.Argument(..., help="YouTube video URL to extract trans
     # Count line breaks and add 1 to get the number of lines
     line_count = formatted_transcript.count('\n') + 1
     console.print(Panel(
-        "\n[bold green]Successfully extracted transcript![/bold green]\n\n"
-        "\nThe transcript has been copied to your clipboard.\n"
+        "[bold green]Successfully extracted transcript![/bold green]\n\n"
+        "The transcript has been copied to your clipboard.\n"
         f"Video ID: {video_id}\n"
         f"Character count: {len(formatted_transcript)}\n"
         f"Line count: {line_count}",
