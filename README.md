@@ -91,6 +91,7 @@ yt-transcript-clipper clip "https://www.youtube.com/shorts/dQw4w9WgXcQ"
    - **Windows**: No additional dependencies required.
    - **macOS**: No additional dependencies required.
    - **Linux**: Depending on your distro, you might need `xclip` or `xsel`:
+
      ```bash
      # For Debian/Ubuntu
      sudo apt-get install xclip
