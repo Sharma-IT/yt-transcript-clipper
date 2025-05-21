@@ -64,42 +64,70 @@ def format_transcript(transcript: List[Dict[str, Any]]) -> str:
 @app.command()
 def clip(url: str = typer.Argument(..., help="YouTube video URL to extract transcript from")):
     """Extract transcript from a YouTube video and copy it to the clipboard."""
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[bold green]{task.description}"),
-        transient=True,
-    ) as progress:
-        # Validate URL
-        progress.add_task(description="Validating YouTube URL...", total=None)
-        if not is_valid_youtube_url(url):
-            console.print(Panel("[bold red]Error: Invalid YouTube URL[/bold red]\n\nPlease provide a valid YouTube video URL.", 
-                               title="Invalid URL", expand=False))
-            sys.exit(1)
-        
-        # Extract video ID
-        video_id = extract_video_id(url)
-        
-        # Get transcript
-        progress.add_task(description=f"Extracting transcript for video ID: {video_id}...", total=None)
-        try:
+    # Variable to store video ID outside the progress context
+    video_id = None
+    transcript = None
+    
+    # Use a context manager for the progress display
+    try:
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[bold green]{task.description}"),
+            transient=True,
+        ) as progress:
+            # Validate URL
+            progress.add_task(description="Validating YouTube URL...", total=None)
+            if not is_valid_youtube_url(url):
+                # Exit the progress context before showing the error
+                raise ValueError("Invalid YouTube URL")
+            
+            # Extract video ID
+            video_id = extract_video_id(url)
+            
+            # Get transcript
+            progress.add_task(description=f"Extracting transcript for video ID: {video_id}...", total=None)
             transcript = get_transcript(video_id)
-        except (TranscriptsDisabled, NoTranscriptFound) as e:
-            console.print(Panel(f"[bold red]Error: {str(e)}[/bold red]\n\nThis video does not have available transcripts.", 
-                               title="Transcript Not Available", expand=False))
-            sys.exit(1)
-        except Exception as e:
-            console.print(Panel(f"[bold red]Error: {str(e)}[/bold red]\n\nFailed to extract transcript.", 
-                               title="Extraction Failed", expand=False))
-            sys.exit(1)
-        
-        # Format and copy transcript
-        progress.add_task(description="Formatting and copying transcript to clipboard...", total=None)
-        formatted_transcript = format_transcript(transcript)
-        pyperclip.copy(formatted_transcript)
-        
-    # Success message
+            
+            # Format and copy transcript
+            progress.add_task(description="Formatting and copying transcript to clipboard...", total=None)
+            formatted_transcript = format_transcript(transcript)
+            pyperclip.copy(formatted_transcript)
+            
+            # Success message - display after exiting the progress context
+            return formatted_transcript
+    except ValueError as e:
+        # Handle invalid URL after progress is cleared
+        # Print an empty line first for spacing
+        console.print()
+        console.print(Panel(
+            "[bold red]Error: Invalid YouTube URL[/bold red]\n\nPlease provide a valid YouTube video URL.",
+            title="Invalid URL", expand=False
+        ))
+        sys.exit(1)
+    except (TranscriptsDisabled, NoTranscriptFound) as e:
+        # Handle transcript availability issues after progress is cleared
+        # Print an empty line first for spacing
+        console.print()
+        console.print(Panel(
+            f"[bold red]Error: {str(e)}[/bold red]\n\nThis video does not have available transcripts.",
+            title="Transcript Not Available", expand=False
+        ))
+        sys.exit(1)
+    except Exception as e:
+        # Handle general errors after progress is cleared
+        # Print an empty line first for spacing
+        console.print()
+        console.print(Panel(
+            f"[bold red]Error: {str(e)}[/bold red]\n\nFailed to extract transcript.",
+            title="Extraction Failed", expand=False
+        ))
+        sys.exit(1)
+    
+    # If we reach here, we have successfully extracted the transcript
     # Count line breaks and add 1 to get the number of lines
     line_count = formatted_transcript.count('\n') + 1
+    
+    # Success message after progress is done
     console.print(Panel(
         "[bold green]Successfully extracted transcript![/bold green]\n\n"
         "The transcript has been copied to your clipboard.\n"
